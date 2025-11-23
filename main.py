@@ -1,43 +1,42 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 
+# Custom exception for duplicate visitors
 class DuplicateVisitorError(Exception):
-    pass
-
-class EarlyEntryError(Exception):
     pass
 
 FILENAME = "visitors.txt"
 
 def ensure_file():
+    """Create the file if it doesn't exist."""
     if not os.path.exists(FILENAME):
         with open(FILENAME, 'w') as f:
-            f.write("")
+            f.write("")  # empty file
 
 def get_last_visitor():
+    """Return the last visitor name, or None if no visitors yet."""
     ensure_file()
     with open(FILENAME, 'r') as f:
         lines = [line.strip() for line in f if line.strip()]
         if not lines:
-            return None, None
+            return None
         last_line = lines[-1]
         try:
-            timestamp_str, visitor_name = last_line.split(" | ", 1)
-            timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
-            return visitor_name, timestamp
+            _, visitor_name = last_line.split(" | ", 1)
+            return visitor_name
         except ValueError:
-            return None, None
+            return None
 
 def add_visitor(visitor_name):
-    last_visitor, last_time = get_last_visitor()
-    now = datetime.now()
+    """Add a visitor, enforcing duplicate visitor rule."""
+    last_visitor = get_last_visitor()
 
+    # Rule: No duplicate consecutive visitors
     if last_visitor == visitor_name:
         raise DuplicateVisitorError("This visitor just logged in. Wait for someone else first.")
 
-    if last_time and now - last_time < timedelta(minutes=5):
-        raise EarlyEntryError("Please wait 5 minutes between different visitors.")
-
+    # Append visitor to the file
+    now = datetime.now()
     with open(FILENAME, 'a') as f:
         f.write(f"{now.strftime('%Y-%m-%d %H:%M:%S')} | {visitor_name}\n")
 
@@ -49,10 +48,6 @@ def main():
         print("Visitor added successfully!")
     except DuplicateVisitorError as e:
         print("Error:", e)
-    except EarlyEntryError as e:
-        print("Error:", e)
-    except Exception as e:
-        print("Unexpected Error:", e)
 
 if __name__ == "__main__":
     main()
