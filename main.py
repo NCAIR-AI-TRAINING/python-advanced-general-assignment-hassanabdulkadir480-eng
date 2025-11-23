@@ -15,38 +15,42 @@ def ensure_file():
     """Create the file if it does not exist."""
     if not os.path.exists(FILENAME):
         with open(FILENAME, "w") as f:
-            pass  # create empty file
+         f.write("")
 
 def get_last_visitor():
-    """Return the last visitor's name and timestamp, or (None, None)."""
-    if not os.path.exists(FILENAME):
-        return None, None
-    
+    ensure_file()
     with open(FILENAME, "r") as f:
         lines = f.readlines()
-        if not lines:
-            return None, None
-        
-        last_line = lines[-1].strip()
+
+    if not lines:
+        return None, None
+
+    last_line = lines[-1].strip()
+    try:
         name, timestamp = last_line.split(" | ")
         return name, datetime.fromisoformat(timestamp)
+    except:
+        return None, None
 
 def add_visitor(visitor_name):
-    """Add a visitor with duplicate and 5-minute early entry checks."""
-    last_visitor, last_time = get_last_visitor()
+    ensure_file()
 
-    # Rule 1: No duplicate consecutive visitors
-    if visitor_name == last_visitor:
-        raise DuplicateVisitorError("Duplicate consecutive visitor not allowed.")
+    last_name, last_time = get_last_visitor()
 
-    # Rule 2: No visitor (anyone) within 5 minutes
-    if last_time and (datetime.now() - last_time) < timedelta(minutes=5):
-        raise EarlyEntryError("Must wait 5 minutes before next visitor.")
+    # Rule 1: Duplicate visitor
+    if last_name == visitor_name:
+        raise DuplicateVisitorError("Duplicate visitor not allowed")
 
-    # Log the visitor
-    now = datetime.now().isoformat()
+    # Rule 2: 5-minute wait between different visitors
+    if last_time is not None:
+        minutes_passed = (datetime.now() - last_time).total_seconds() / 60
+        if minutes_passed < 5:
+            raise EarlyEntryError("Please wait 5 minutes before next visitor")
+
+    # Write visitor in correct format: "Name | ISOtimestamp"
+    timestamp = datetime.now().isoformat()
     with open(FILENAME, "a") as f:
-        f.write(f"{visitor_name} | {now}\n")
+        f.write(f"{visitor_name} | {timestamp}\n")
 
 def main():
     ensure_file()
