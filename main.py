@@ -2,17 +2,20 @@ from datetime import datetime, timedelta
 import os
 
 class DuplicateVisitorError(Exception):
+    """Raised when the same visitor tries to check in consecutively."""
     pass
 
 class EarlyEntryError(Exception):
+    """Raised when any visitor tries to check in within 5 minutes of the last visitor."""
     pass
 
 FILENAME = "visitors.txt"
 
 def ensure_file():
+    """Create the file if it does not exist."""
     if not os.path.exists(FILENAME):
         with open(FILENAME, "w") as f:
-            f.write("")
+         f.write("")
 
 def get_last_visitor():
     ensure_file()
